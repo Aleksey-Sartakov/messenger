@@ -1,6 +1,7 @@
 from datetime import datetime
 from typing import AsyncGenerator, Annotated
 
+from sqlalchemy import String
 from sqlalchemy.dialects.postgresql import TIMESTAMP
 from sqlalchemy.ext.asyncio import AsyncAttrs, AsyncSession, create_async_engine, async_sessionmaker
 from sqlalchemy.orm import DeclarativeBase, mapped_column
@@ -9,6 +10,7 @@ from src.config import settings
 
 
 IntPk = Annotated[int, mapped_column(primary_key=True)]
+String100 = Annotated[str, mapped_column(String(100))]
 
 
 class BaseDbModel(AsyncAttrs, DeclarativeBase):
