@@ -16,6 +16,8 @@ class Settings(BaseSettings):
 	APP_ADMIN_USER_EMAIL: str
 	APP_ADMIN_USER_PASSWORD: str
 
+	TEMPLATES_PATH: str
+
 	@property
 	def db_connection_url_async(self):
 		return f"postgresql+asyncpg://{self.DB_USER_NAME}:{self.DB_USER_PASSWORD}@{self.DB_HOST}:{self.DB_PORT}/{self.DB_NAME}"
