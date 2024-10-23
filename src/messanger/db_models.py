@@ -14,4 +14,4 @@ class MessageDbModel(BaseDbModel):
 	recipient_id: Mapped[int] = mapped_column(ForeignKey("user.id", ondelete="CASCADE"))
 	text_content: Mapped[str] = mapped_column(Text, nullable=False)
 	created_at: Mapped[datetime] = mapped_column(default=datetime.utcnow)
-	updated_at: Mapped[datetime] = mapped_column(default=datetime.utcnow, onupdate=datetime.utcnow)
+	updated_at: Mapped[datetime | None] = mapped_column(onupdate=datetime.utcnow)
