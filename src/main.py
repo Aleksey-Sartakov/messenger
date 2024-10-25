@@ -1,9 +1,8 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.exception_handlers import http_exception_handler
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import RedirectResponse
-from fastapi.requests import Request
 
 from src.auth.manager import auth_manager
 from src.auth.pydantic_schemas import UserRead, UserCreate
@@ -72,7 +71,7 @@ app.include_router(
 app.include_router(messanger_router)
 
 
-@app.get("/")
+@app.get("/", tags=["Redirect"])
 async def redirect_to_auth():
 	return RedirectResponse(url="/auth")
 

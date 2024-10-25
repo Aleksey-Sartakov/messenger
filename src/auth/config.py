@@ -4,7 +4,7 @@ from src.config import settings
 
 
 def get_jwt_strategy() -> JWTStrategy:
-    return JWTStrategy(secret=settings.SECRET_KEY_FOR_JWT, lifetime_seconds=1800)
+    return JWTStrategy(secret=settings.SECRET_KEY_FOR_JWT, lifetime_seconds=None)
 
 
 cookie_transport = CookieTransport(cookie_name="messanger_auth")
