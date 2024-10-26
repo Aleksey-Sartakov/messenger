@@ -1,7 +1,7 @@
-from typing import Annotated, Literal
+import json
+from typing import Annotated
 
-from fastapi import Depends, Query, HTTPException
-from fastapi.requests import Request
+from fastapi import Depends, Query, HTTPException, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy import select, asc, desc
@@ -12,7 +12,7 @@ from src.auth.db_models import UserDbModel
 from src.auth.manager import auth_manager
 from src.auth.pydantic_schemas import UserRead, UserUpdate
 from src.base_db_config import get_async_session, FilterParams
-from src.config import settings
+from src.config import settings, redis_client
 
 
 current_active_user = auth_manager.current_user(active=True, optional=True)
@@ -41,34 +41,42 @@ async def get_all_users(
 	default_sort_by = "id"
 	default_order = "asc"
 
-	query = (
-		select(UserDbModel)
-	)
-
 	if filter_params.sort_by:
-		for i, attribute in enumerate(filter_params.sort_by):
-			if hasattr(UserDbModel, attribute):
-				if filter_params.order and len(filter_params.order) > i:
-					if filter_params.order[i] == "desc":
-						query = query.order_by(desc(getattr(UserDbModel, attribute)))
-					else:
-						query = query.order_by(asc(getattr(UserDbModel, attribute)))
-
-				else:
-					query = query.order_by(asc(getattr(UserDbModel, attribute)))
-
+		sort_by = filter_params.sort_by[0]
+		if hasattr(UserDbModel, sort_by):
+			if filter_params.order:
+				order = filter_params.order[0]
 			else:
-				raise HTTPException(status_code=422, detail={
-					"status": "error",
-					"details": f"The specified sorting field '{attribute}' doesn't exist."
-				})
-	else:
-		if default_order == "desc":
-			query = query.order_by(desc(getattr(UserDbModel, default_sort_by)))
+				order = default_order
 		else:
-			query = query.order_by(asc(getattr(UserDbModel, default_sort_by)))
+			raise HTTPException(status_code=422, detail={
+				"status": "error",
+				"details": f"The specified sorting field '{sort_by}' doesn't exist."
+			})
+	else:
+		sort_by = default_sort_by
+		order = default_order
 
-	query = query.limit(filter_params.limit).offset(filter_params.offset)
-	all_users = await session.scalars(query)
+	cached_users = await redis_client.get(f"{settings.KEY_PREFIX_FOR_CACHE_USERS}:{settings.KEY_FOR_CACHE_ALL_USERS}")
+	if cached_users:
+		if order == "asc":
+			reverse = False
+		else:
+			reverse = True
 
-	return all_users.all()
+		all_users = json.loads(cached_users)
+		all_users.sort(key=lambda x: getattr(x, sort_by), reverse=reverse)
+
+		return all_users[filter_params.offset : filter_params.offset + filter_params.limit]
+
+	else:
+		query = select(UserDbModel)
+		if order == "desc":
+			query = query.order_by(desc(getattr(UserDbModel, sort_by)))
+		else:
+			query = query.order_by(asc(getattr(UserDbModel, sort_by)))
+		query = query.limit(filter_params.limit).offset(filter_params.offset)
+
+		all_users = await session.scalars(query)
+
+		return all_users.all()
