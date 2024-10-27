@@ -16,7 +16,7 @@ from src.config import settings
 
 # revision identifiers, used by Alembic.
 revision: str = "8a460473f2f7"
-down_revision: Union[str, None] = "2fab8985131c"
+down_revision: Union[str, None] = "dd8a90fe9020"
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 

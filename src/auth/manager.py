@@ -30,12 +30,6 @@ class UserManager(IntegerIDMixin, BaseUserManager[UserDbModel, int]):
 				json.dumps(users)
 			)
 
-		else:
-			await redis_client.set(
-				f"{settings.DEFAULT_KEY_PREFIX_FOR_CACHE_USERS}:{settings.KEY_FOR_CACHE_ALL_USERS}",
-				json.dumps([new_user_info])
-			)
-
 
 async def get_user_db(session: AsyncSession = Depends(get_async_session)):
 	yield SQLAlchemyUserDatabase(session, UserDbModel)

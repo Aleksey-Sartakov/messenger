@@ -3,6 +3,8 @@ import json
 import traceback
 
 import aioredis
+import httpx
+from celery import Celery
 from fastapi import APIRouter, Depends, Request, HTTPException
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import HTMLResponse
@@ -31,6 +33,32 @@ templates = Jinja2Templates(directory=settings.TEMPLATES_PATH)
 
 # можно открывать как один и тот же чат в нескольких вкладках, так и разные чаты в нескольких вкладках
 active_connections: dict[int, dict[int, list[WebSocket]]] = {}
+
+celery_manager = Celery("tasks", broker=settings.redis_connection_url)
+
+
+@celery_manager.task
+def send_notification(recipient_id: int, sender_id: int) -> None:
+	async def notify():
+		async_engine = create_async_engine(settings.db_connection_url_async)
+		async_session_maker_instance = async_sessionmaker(async_engine, expire_on_commit=False)
+		async with async_session_maker_instance() as session:
+			recipient = await session.get(UserDbModel, recipient_id)
+			telegram_id = recipient.telegram_id
+
+			if telegram_id:
+				sender = await session.get(UserDbModel, sender_id)
+				sender_full_name = f"{sender.first_name} {sender.last_name}"
+
+				async with httpx.AsyncClient() as client:
+					response = await client.post(
+						"http://telegram_bot:8001/notify/",
+						params={"telegram_id": telegram_id, "sender_full_name": sender_full_name}
+					)
+					response.raise_for_status()
+
+	import asyncio
+	asyncio.run(notify())
 
 
 async def get_messages_between_two_users_from_db(
@@ -69,20 +97,19 @@ async def send_message_to_recipient(
 		current_user_id: int,
 		content: MessageRead
 ):
-	print("--------")
 	if recipient_id in active_connections:
 		if current_user_id in active_connections[recipient_id]:
 			# если у получателя открыт данный чат в нескольких вкладках
 			for connection in active_connections[recipient_id][current_user_id]:
 				await connection.send_json(content)
 
-			cache_key = f"{settings.KEY_PREFIX_FOR_CACHE_MESSAGES}:{recipient_id}:{current_user_id}"
-			cached_messages = await redis_client.get(cache_key)
-			if cached_messages:
-				messages = json.loads(cached_messages)
-				messages.append(content.model_dump())
+		cache_key = f"{settings.KEY_PREFIX_FOR_CACHE_MESSAGES}:{recipient_id}:{current_user_id}"
+		cached_messages = await redis_client.get(cache_key)
+		if cached_messages:
+			messages = json.loads(cached_messages)
+			messages.append(content)
 
-				await redis_client.set(cache_key, json.dumps(messages), ex=1800)
+			await redis_client.set(cache_key, json.dumps(messages), ex=1800)
 
 		# Отправка сообщения в глобальный вебсокет страницы. Если у пользователя, кроме вкладки с этим чатом,
 		# открыты еще вкладки с другими чатами, то эти вкладки получат уведомление о том, что в этот чат пришло сообщение
@@ -92,7 +119,7 @@ async def send_message_to_recipient(
 	else:
 		print(5)
 		# отправка уведомления в тг
-		pass
+		send_notification.delay(recipient_id, current_user_id)
 
 
 @messanger_router.get("/", response_class=HTMLResponse, summary="Страница чата")
@@ -159,8 +186,8 @@ async def get_messages_between_users_by_second_user_id(
 			# кеш пустой
 			else:
 				messages = await get_messages_between_two_users_from_db(current_user.id, second_user_id, limit, offset)
-
-				await redis_client.set(cache_key, json.dumps(messages), ex=1800)
+				if messages:
+					await redis_client.set(cache_key, json.dumps(messages), ex=1800)
 
 		except IntegrityError:
 			print(traceback.format_exc())

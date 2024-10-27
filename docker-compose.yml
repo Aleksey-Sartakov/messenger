@@ -1,0 +1,67 @@
+services:
+  messenger:
+    build:
+      context: .
+      dockerfile: ./src/Dockerfile
+    container_name: messenger
+    env_file:
+      - .env-non-dev
+    ports:
+      - "7000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+      celery:
+        condition: service_started
+    command: sh -c "alembic upgrade head && uvicorn src.main:app --host 0.0.0.0 --port 8000"
+
+  telegram_bot:
+    build:
+      context: .
+      dockerfile: ./notification_bot/Dockerfile
+    container_name: telegram_bot
+    env_file:
+      - .env-non-dev
+    ports:
+      - "7001:8001"
+    depends_on:
+      - redis
+    command: sh -c "python main.py"
+
+  db:
+    image: postgres:16
+    container_name: db_for_messanger
+    command: -p 5435
+    expose:
+      - 5435
+    ports:
+      - "5435:5432"
+    env_file:
+      - .env-non-dev
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U ${DB_USER_NAME} -d ${DB_NAME} -p 5435" ]
+      interval: 10s
+      retries: 3
+      timeout: 5s
+
+  redis:
+    image: redis:7
+    container_name: redis_for_messenger
+    command: --port 6380
+    expose:
+      - 6380
+    ports:
+      - "6380:6380"
+
+  celery:
+    build:
+      context: .
+      dockerfile: ./src/Dockerfile
+    container_name: celery_manager
+    env_file:
+      - .env-non-dev
+    depends_on:
+      - redis
+    command: sh -c "celery --app=src.messanger.router:celery_manager worker -l INFO"

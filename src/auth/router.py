@@ -65,7 +65,7 @@ async def get_all_users(
 			reverse = True
 
 		all_users = json.loads(cached_users)
-		all_users.sort(key=lambda x: getattr(x, sort_by), reverse=reverse)
+		all_users.sort(key=lambda x: x[sort_by], reverse=reverse)
 
 		return all_users[filter_params.offset : filter_params.offset + filter_params.limit]
 

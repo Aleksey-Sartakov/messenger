@@ -1,12 +1,16 @@
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI, HTTPException, Request, Depends
 from fastapi.exception_handlers import http_exception_handler
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import RedirectResponse
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
+from src.auth.db_models import UserDbModel
 from src.auth.manager import auth_manager
 from src.auth.pydantic_schemas import UserRead, UserCreate
 from src.auth.router import auth_router, users_router
+from src.base_db_config import get_async_session
 from src.messanger.router import messanger_router
 
 
@@ -82,3 +86,33 @@ async def handle_401_unauthorized(request: Request, exc: HTTPException):
 		return RedirectResponse(url="/auth")
 	else:
 		return await http_exception_handler(request, exc)
+
+
+@app.post("/link_telegram_id/")
+async def link_telegram_id(email: str, telegram_id: int, session: AsyncSession = Depends(get_async_session)):
+	query = (
+		select(UserDbModel)
+		.where(UserDbModel.email == email)
+	)
+	user = await session.scalars(query)
+	user = user.first()
+	if user:
+		try:
+			user.telegram_id = telegram_id
+			await session.commit()
+
+		except Exception:
+			await session.rollback()
+
+			raise HTTPException(status_code=400, detail={
+				"status": "error",
+				"details": "Another user is already linked to this telegram account."
+			})
+
+	else:
+		raise HTTPException(status_code=404, detail={
+				"status": "error",
+				"details": "User not found."
+			})
+
+	return {"status": "success"}
