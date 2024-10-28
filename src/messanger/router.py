@@ -97,19 +97,23 @@ async def send_message_to_recipient(
 		current_user_id: int,
 		content: MessageRead
 ):
+	cache_key = f"{settings.KEY_PREFIX_FOR_CACHE_MESSAGES}:{recipient_id}:{current_user_id}"
+	cached_messages = await redis_client.get(cache_key)
+	ttl = None
+	messages = None
+	if cached_messages:
+		messages = json.loads(cached_messages)
+		messages.append(content)
+
+		ttl = await redis_client.ttl(cache_key)
+
 	if recipient_id in active_connections:
+		ttl = 1800
+
 		if current_user_id in active_connections[recipient_id]:
 			# если у получателя открыт данный чат в нескольких вкладках
 			for connection in active_connections[recipient_id][current_user_id]:
 				await connection.send_json(content)
-
-		cache_key = f"{settings.KEY_PREFIX_FOR_CACHE_MESSAGES}:{recipient_id}:{current_user_id}"
-		cached_messages = await redis_client.get(cache_key)
-		if cached_messages:
-			messages = json.loads(cached_messages)
-			messages.append(content)
-
-			await redis_client.set(cache_key, json.dumps(messages), ex=1800)
 
 		# Отправка сообщения в глобальный вебсокет страницы. Если у пользователя, кроме вкладки с этим чатом,
 		# открыты еще вкладки с другими чатами, то эти вкладки получат уведомление о том, что в этот чат пришло сообщение
@@ -117,9 +121,11 @@ async def send_message_to_recipient(
 			await connection.send_json(content)
 
 	else:
-		print(5)
 		# отправка уведомления в тг
 		send_notification.delay(recipient_id, current_user_id)
+
+	if ttl and messages:
+		await redis_client.set(cache_key, json.dumps(messages), ex=ttl)
 
 
 @messanger_router.get("/", response_class=HTMLResponse, summary="Страница чата")
