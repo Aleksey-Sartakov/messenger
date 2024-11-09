@@ -4,10 +4,10 @@ from sqlalchemy import engine_from_config
 from sqlalchemy import pool
 from alembic import context
 
-from src.config import settings
-from src.auth.db_models import UserDbModel # noqa
-from src.messanger.db_models import MessageDbModel # noqa
-from src.base_db_config import BaseDbModel
+from main_app.config import settings
+from main_app.auth.models import User # noqa
+from main_app.messanger.models import Message # noqa
+from main_app.database import BaseDbModel
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.

@@ -11,8 +11,8 @@ from alembic import op
 import sqlalchemy as sa
 from pwdlib import PasswordHash
 
-from src.auth.db_models import UserDbModel
-from src.config import settings
+from main_app.auth.models import User
+from main_app.config import settings
 
 # revision identifiers, used by Alembic.
 revision: str = "8a460473f2f7"
@@ -25,7 +25,7 @@ def upgrade() -> None:
     conn = op.get_bind()
     with sa.orm.Session(bind=conn) as session:
         password_hash = PasswordHash.recommended()
-        admin_user = UserDbModel(
+        admin_user = User(
             first_name=settings.APP_ADMIN_USER_FIRST_NAME,
             last_name=settings.APP_ADMIN_USER_LAST_NAME,
             email=settings.APP_ADMIN_USER_EMAIL,
@@ -40,7 +40,7 @@ def downgrade() -> None:
     conn = op.get_bind()
     with sa.orm.Session(bind=conn) as session:
         session.execute(
-            sa.delete(UserDbModel)
-            .where(UserDbModel.email == settings.APP_ADMIN_USER_EMAIL)
+            sa.delete(User)
+            .where(User.email == settings.APP_ADMIN_USER_EMAIL)
         )
         session.commit()

@@ -1,0 +1,52 @@
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Простой мессенджер</title>
+    <link rel="stylesheet" type="text/css" href="/static/css/messenger.css">
+</head>
+<body>
+	<div class="wrapper">
+		<header class="main-header">
+			<button class="logout-btn" id="logoutBtn">Выйти</button>
+		</header>
+		<div class="container">
+			<div class="user-list" id="userList">
+				<div class="user-item" data-user-id="{{ current_user.id }}">
+					Избранное
+				</div>
+				{% for user in users %}
+					{% if user.id != current_user.id %}
+						<div class="user-item" data-user-id="{{ user.id }}">
+							{{ user.first_name + " " + user.last_name}}
+						</div>
+					{% endif %}
+				{% endfor %}
+				<div class="load-more" id="loadMore">
+				  	<div class="load-more-text">Показать еще</div>
+				  	<svg class="arrow-down" viewBox="0 0 24 24">
+						<path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z"/>
+				  	</svg>
+				</div>
+			</div>
+			<div class="chat-area hidden" id="chatArea">
+				<div class="chat-header">
+					<h2 id="chatTitle">Чат</h2>
+				</div>
+				<div class="chat-messages" id="chatMessages">
+					<!-- Сообщения будут добавлены через JavaScript -->
+				</div>
+				<div class="chat-input">
+					<input type="text" id="messageInput" placeholder="Введите сообщение...">
+					<button id="sendButton">Отправить</button>
+				</div>
+			</div>
+		</div>
+	</div>
+	<script>
+		const currentUserId = {{ current_user.id }};
+		var loaded_users_count = {{ users|length }};
+	</script>
+    <script src="/static/js/messenger.js"></script>
+</body>
+</html>

@@ -2,7 +2,7 @@ services:
   messenger:
     build:
       context: .
-      dockerfile: ./src/Dockerfile
+      dockerfile: main_app/Dockerfile
     container_name: messenger
     env_file:
       - .env-non-dev
@@ -15,12 +15,12 @@ services:
         condition: service_started
       celery:
         condition: service_started
-    command: sh -c "alembic upgrade head && uvicorn src.main:app --host 0.0.0.0 --port 8000"
+    command: sh -c "alembic upgrade head && uvicorn main_app.main:app --host 0.0.0.0 --port 8000"
 
   telegram_bot:
     build:
       context: .
-      dockerfile: ./notification_bot/Dockerfile
+      dockerfile: notification_service/Dockerfile
     container_name: telegram_bot
     env_file:
       - .env-non-dev
@@ -58,13 +58,13 @@ services:
   celery:
     build:
       context: .
-      dockerfile: ./src/Dockerfile
+      dockerfile: main_app/Dockerfile
     container_name: celery_manager
     env_file:
       - .env-non-dev
     depends_on:
       - redis
-    command: sh -c "celery --app=src.messanger.router:celery_manager worker -l INFO"
+    command: sh -c "celery --app=main_app.config:celery_manager worker -l INFO"
 
   nginx:
     image: nginx:latest
