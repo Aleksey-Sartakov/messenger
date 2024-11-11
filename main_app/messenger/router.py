@@ -17,14 +17,14 @@ from main_app.auth.router import get_users_list
 from main_app.database import redis_client
 from main_app.dependencies import get_async_session
 from main_app.config import settings, logger
-from main_app.messanger.constants import (
+from main_app.messenger.constants import (
 	CHAT_PUBSUB_NAME_TEMPLATE,
 	MESSAGES_CACHE_KEY_TEMPLATE,
 	SESSIONS_COUNT_KEY_TEMPLATE
 )
-from main_app.messanger.schemas import MessageRead
-from main_app.messanger.services.message_service import MessageService
-from main_app.messanger.services.websocket_service import WebsocketService
+from main_app.messenger.schemas import MessageRead
+from main_app.messenger.services.message_service import MessageService
+from main_app.messenger.services.websocket_service import WebsocketService
 from main_app.pagination import DefaultPagination
 
 

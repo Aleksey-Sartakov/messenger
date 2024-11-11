@@ -6,14 +6,14 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import aliased
 
 from main_app.database import redis_client
-from main_app.messanger.constants import MESSAGES_CACHE_TTL
-from main_app.messanger.models import Message
-from main_app.messanger.schemas import MessageCreate, MessageUpdate, MessageRead
+from main_app.messenger.constants import MESSAGES_CACHE_TTL
+from main_app.messenger.models import Message
+from main_app.messenger.schemas import MessageCreate, MessageUpdate, MessageRead
 from main_app.pagination import DefaultPagination
-from main_app.service import BaseDAOService
+from main_app.service import BaseDAO
 
 
-class MessageService(BaseDAOService[Message, MessageCreate, MessageUpdate], model=Message):
+class MessageService(BaseDAO[Message, MessageCreate, MessageUpdate], model=Message):
 	@classmethod
 	async def get_between_two_users(
 			cls,

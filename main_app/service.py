@@ -13,7 +13,7 @@ ModelCreateSchema = TypeVar("ModelCreateSchema", bound=BaseModel)
 ModelUpdateSchema = TypeVar("ModelUpdateSchema", bound=BaseModel)
 
 
-class BaseDAOService(Generic[Model, ModelCreateSchema, ModelUpdateSchema]):
+class BaseDAO(Generic[Model, ModelCreateSchema, ModelUpdateSchema]):
 	model: type[Model] = None
 
 	def __init_subclass__(cls, *args, model: type[Model], **kwargs):

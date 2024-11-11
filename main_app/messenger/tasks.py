@@ -3,7 +3,7 @@ import asyncio
 import httpx
 
 from main_app.auth.services.user_service import UserService
-from main_app.config import celery_manager
+from main_app.config import celery_manager, settings
 from main_app.database import async_sessionmaker_instance, async_engine
 
 
@@ -22,7 +22,7 @@ def send_notification(recipient_id: int, sender_id: int) -> None:
 
 				async with httpx.AsyncClient() as client:
 					response = await client.post(
-						"http://telegram_bot:8001/notify/",
+						f"http://{settings.NOTIFICATION_SERVICE_HOST}:{settings.NOTIFICATION_SERVICE_PORT}/notify/",
 						params={"telegram_id": telegram_id, "sender_full_name": sender_full_name}
 					)
 					response.raise_for_status()

@@ -11,10 +11,10 @@ from main_app.database import redis_client
 from main_app.exceptions import ColumnDoesNotExistError
 from main_app.filters import SimpleSorting
 from main_app.pagination import DefaultPagination
-from main_app.service import BaseDAOService
+from main_app.service import BaseDAO
 
 
-class UserService(BaseDAOService[User, UserCreate, UserUpdate], model=User):
+class UserService(BaseDAO[User, UserCreate, UserUpdate], model=User):
 	@classmethod
 	async def get(
 			cls,

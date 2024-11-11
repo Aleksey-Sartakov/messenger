@@ -9,11 +9,11 @@ from aioredis.exceptions import ConnectionError as RedisConnectionError
 
 from main_app.config import logger
 from main_app.database import redis_client
-from main_app.messanger.constants import MESSAGES_CACHE_KEY_TEMPLATE, SESSIONS_COUNT_KEY_TEMPLATE
-from main_app.messanger.schemas import MessageRead, MessageCreate
-from main_app.messanger.services.message_service import MessageService
-from main_app.messanger.services.pubsub_service import PubSubService
-from main_app.messanger.tasks import send_notification
+from main_app.messenger.constants import MESSAGES_CACHE_KEY_TEMPLATE, SESSIONS_COUNT_KEY_TEMPLATE
+from main_app.messenger.schemas import MessageRead, MessageCreate
+from main_app.messenger.services.message_service import MessageService
+from main_app.messenger.services.pubsub_service import PubSubService
+from main_app.messenger.tasks import send_notification
 
 
 class WebsocketService:

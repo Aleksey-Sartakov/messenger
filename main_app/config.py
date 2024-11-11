@@ -24,6 +24,9 @@ class Settings(BaseSettings):
 	REDIS_HOST: str
 	REDIS_PORT: str
 
+	NOTIFICATION_SERVICE_HOST: str
+	NOTIFICATION_SERVICE_PORT: int
+
 	@property
 	def db_connection_url_async(self):
 		return f"postgresql+asyncpg://{self.DB_USER_NAME}:{self.DB_USER_PASSWORD}@{self.DB_HOST}:{self.DB_PORT}/{self.DB_NAME}"
@@ -48,4 +51,4 @@ logger = logging.getLogger('messenger')
 settings = Settings()
 
 celery_manager = Celery("tasks", broker=settings.redis_connection_url)
-celery_manager.autodiscover_tasks(['main_app.messanger.tasks'])
+celery_manager.autodiscover_tasks(['main_app.messenger.tasks'])

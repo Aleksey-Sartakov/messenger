@@ -6,7 +6,7 @@ from alembic import context
 
 from main_app.config import settings
 from main_app.auth.models import User # noqa
-from main_app.messanger.models import Message # noqa
+from main_app.messenger.models import Message # noqa
 from main_app.database import BaseDbModel
 
 # this is the Alembic Config object, which provides

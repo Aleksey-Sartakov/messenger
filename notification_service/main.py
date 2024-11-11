@@ -6,12 +6,12 @@ from aiogram.filters import CommandStart
 from aiogram.types import Message
 from fastapi import FastAPI, HTTPException
 
+from config import settings
 
-TELEGRAM_BOT_TOKEN = "7875873156:AAFqIkUld5qxc1nnQsKaNmLslJ6xaQcZa0k"
 
-
-bot = Bot(token=TELEGRAM_BOT_TOKEN)
+bot = Bot(token=settings.TELEGRAM_BOT_TOKEN)
 dp = Dispatcher()
+
 app = FastAPI()
 
 
@@ -41,16 +41,19 @@ async def link_email(message: Message):
 
     async with httpx.AsyncClient() as client:
         response = await client.post(
-            "http://messenger:8000/users/link_telegram_id/",
+            f"http://{settings.MESSENGER_URL}:{settings.MESSENGER_PORT}/users/link_telegram_id/",
             params={"email": user_email, "telegram_id": user_telegram_id}
         )
 
         if response.status_code == 200:
             await message.reply("Аккаунт успешно привязан!")
+
         elif response.status_code == 400:
             await message.reply("Данный телеграмм аккаунт уже привязан к другому пользователю.")
+
         elif response.status_code == 404:
             await message.reply("Пользователь с таким email не найден.")
+
         else:
             await message.reply("Ой! Что-то пошло не так при попытке привязать данный аккаунт. Попробуйте снова позже.")
 
@@ -60,7 +63,7 @@ async def start_bot():
 
 
 async def start_api():
-    config = uvicorn.Config(app, host="0.0.0.0", port=8001, loop="asyncio")
+    config = uvicorn.Config(app, host="0.0.0.0", port=settings.NOTIFICATION_SERVICE_PORT, loop="asyncio")
     server = uvicorn.Server(config)
 
     await server.serve()

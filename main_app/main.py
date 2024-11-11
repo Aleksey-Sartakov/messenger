@@ -5,7 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import RedirectResponse
 
 from main_app.auth.router import auth_router, users_router
-from main_app.messanger.router import messanger_router
+from main_app.messenger.router import messanger_router
 
 
 tags_metadata = [
