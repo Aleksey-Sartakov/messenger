@@ -29,10 +29,10 @@ templates = Jinja2Templates(directory=settings.TEMPLATES_PATH)
 
 @auth_router.get("/", response_class=HTMLResponse, summary="Страница авторизации")
 async def get_auth_page(request: Request, current_user: User | None = Depends(current_active_user_or_none)):
-	if not current_user:
-		return templates.TemplateResponse("auth.html", {"request": request})
-	else:
-		return RedirectResponse(url="/messenger")
+    if not current_user:
+        return templates.TemplateResponse("auth.html", {"request": request})
+    else:
+        return RedirectResponse(url="/messenger")
 
 
 users_router = auth_service.get_users_router(UserRead, UserUpdate)
@@ -40,90 +40,90 @@ users_router = auth_service.get_users_router(UserRead, UserUpdate)
 
 @users_router.get("/", response_model=list[UserRead])
 async def get_users_list(
-		pagination: DefaultPagination = Depends(),
-		sorting: SimpleSorting = Depends(),
-		session: AsyncSession = Depends(get_async_session),
-		current_user: User = Depends(current_active_user)
+        pagination: DefaultPagination = Depends(),
+        sorting: SimpleSorting = Depends(),
+        session: AsyncSession = Depends(get_async_session),
+        current_user: User = Depends(current_active_user)
 ):
-	logger.info(f"'get_users_list' has called by user with id {current_user.id}")
+    logger.info(f"'get_users_list' has called by user with id {current_user.id}")
 
-	try:
-		users = await UserService.get_from_cache(sorting, pagination)
-	except RedisConnectionError:
-		users = None
-		logger.warning("Connection to redis failed while getting a cache!")
+    try:
+        users = await UserService.get_from_cache(sorting, pagination)
+    except RedisConnectionError:
+        users = None
+        logger.warning("Connection to redis failed while getting a cache!")
 
-	if not users:
-		try:
-			users = await UserService.get(session, sorting, pagination)
+    if not users:
+        try:
+            users = await UserService.get(session, sorting, pagination)
 
-			if users:
-				await UserService.save_to_cache(users, sorting, pagination)
+            if users:
+                await UserService.save_to_cache(users, sorting, pagination)
 
-		except RedisConnectionError:
-			logger.warning("Connection to redis failed while saving a cache!")
+        except RedisConnectionError:
+            logger.warning("Connection to redis failed while saving a cache!")
 
-		except ColumnDoesNotExistError as e:
-			traceback_message = ''.join(traceback.format_exception(type(e), e, e.__traceback__))
-			logger.error(f"{e} More details:\n{traceback_message}")
+        except ColumnDoesNotExistError as e:
+            traceback_message = ''.join(traceback.format_exception(type(e), e, e.__traceback__))
+            logger.error(f"{e} More details:\n{traceback_message}")
 
-			raise HTTPException(status_code=400, detail={
-				"status": "error",
-				"details": e
-			})
+            raise HTTPException(status_code=400, detail={
+                "status": "error",
+                "details": e
+            })
 
-		except SQLAlchemyError as e:
-			traceback_message = ''.join(traceback.format_exception(type(e), e, e.__traceback__))
-			logger.error(f"Details:\n{traceback_message}")
+        except SQLAlchemyError as e:
+            traceback_message = ''.join(traceback.format_exception(type(e), e, e.__traceback__))
+            logger.error(f"Details:\n{traceback_message}")
 
-			raise HTTPException(status_code=500, detail={
-				"status": "error",
-				"details": f"An error occurred while accessing the database: {e}"
-			})
+            raise HTTPException(status_code=500, detail={
+                "status": "error",
+                "details": f"An error occurred while accessing the database: {e}"
+            })
 
-		except Exception as e:
-			traceback_message = ''.join(traceback.format_exception(type(e), e, e.__traceback__))
-			logger.error(f"Details:\n{traceback_message}")
+        except Exception as e:
+            traceback_message = ''.join(traceback.format_exception(type(e), e, e.__traceback__))
+            logger.error(f"Details:\n{traceback_message}")
 
-			raise HTTPException(status_code=500, detail={
-				"status": "error",
-				"details": f"An unexpected server error has occurred: {e}"
-			})
+            raise HTTPException(status_code=500, detail={
+                "status": "error",
+                "details": f"An unexpected server error has occurred: {e}"
+            })
 
-	return users
+    return users
 
 
 @users_router.post("/link_telegram_id/")
 async def link_telegram_id(email: str, telegram_id: int, session: AsyncSession = Depends(get_async_session)):
-	user = await UserService.get_one_or_none(session, {"email": email})
-	if user:
-		try:
-			user.telegram_id = telegram_id
-			await session.commit()
+    user = await UserService.get_one_or_none(session, {"email": email})
+    if user:
+        try:
+            user.telegram_id = telegram_id
+            await session.commit()
 
-		except IntegrityError:
-			await session.rollback()
+        except IntegrityError:
+            await session.rollback()
 
-			raise HTTPException(status_code=400, detail={
-				"status": "error",
-				"details": f"The specified telegram account is already being used by another user"
-			})
+            raise HTTPException(status_code=400, detail={
+                "status": "error",
+                "details": "The specified telegram account is already being used by another user"
+            })
 
-		except SQLAlchemyError as e:
-			traceback_message = ''.join(traceback.format_exception(type(e), e, e.__traceback__))
-			logger.error(f"Details:\n{traceback_message}")
+        except SQLAlchemyError as e:
+            traceback_message = ''.join(traceback.format_exception(type(e), e, e.__traceback__))
+            logger.error(f"Details:\n{traceback_message}")
 
-			await session.rollback()
+            await session.rollback()
 
-			raise HTTPException(status_code=500, detail={
-				"status": "error",
-				"details": f"An error occurred while accessing the database: {e}"
-			})
+            raise HTTPException(status_code=500, detail={
+                "status": "error",
+                "details": f"An error occurred while accessing the database: {e}"
+            })
 
-	else:
-		raise HTTPException(status_code=404, detail={
-				"status": "error",
-				"details": "User not found."
-			})
+    else:
+        raise HTTPException(status_code=404, detail={
+            "status": "error",
+            "details": "User not found."
+        })
 
-	return {"status": "success"}
+    return {"status": "success"}

@@ -7,27 +7,27 @@
 </head>
 <body>
     <div class="container">
-		<div class="tabs">
-			<div class="tab active" onclick="showTab('login')">Авторизация</div>
-			<div class="tab" onclick="showTab('register')">Регистрация</div>
-		</div>
+        <div class="tabs">
+            <div class="tab active" onclick="showTab('login')">Авторизация</div>
+            <div class="tab" onclick="showTab('register')">Регистрация</div>
+        </div>
 
-		<form id="loginForm" class="form active">
-			<input type="email" id="loginEmail" placeholder="Email" required>
-			<input type="password" id="loginPassword" placeholder="Пароль" required>
-			<div id="loginError" class="error"></div>
-			<button type="submit" id="loginButton">Войти</button>
-		</form>
+        <form id="loginForm" class="form active">
+            <input type="email" id="loginEmail" placeholder="Email" required>
+            <input type="password" id="loginPassword" placeholder="Пароль" required>
+            <div id="loginError" class="error"></div>
+            <button type="submit" id="loginButton">Войти</button>
+        </form>
 
-		<form id="registerForm" class="form">
-			<input type="email" id="registerEmail" placeholder="Email" required>
-			<input type="text" id="registerFirstName" placeholder="Имя" required>
-			<input type="text" id="registerLastName" placeholder="Фамилия" required>
-			<input type="password" id="registerPassword" placeholder="Пароль" required>
-			<div id="registerError" class="error"></div>
-			<button type="submit" id="registerButton">Зарегистрироваться</button>
-		</form>
-	</div>
+        <form id="registerForm" class="form">
+            <input type="email" id="registerEmail" placeholder="Email" required>
+            <input type="text" id="registerFirstName" placeholder="Имя" required>
+            <input type="text" id="registerLastName" placeholder="Фамилия" required>
+            <input type="password" id="registerPassword" placeholder="Пароль" required>
+            <div id="registerError" class="error"></div>
+            <button type="submit" id="registerButton">Зарегистрироваться</button>
+        </form>
+    </div>
     <script src="{{ url_for('static', path='js/auth.js') }}"></script>
 </body>
 </html>

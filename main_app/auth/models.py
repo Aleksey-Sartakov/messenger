@@ -5,9 +5,9 @@ from main_app.database import BaseDbModel, IntPk, String100
 
 
 class User(SQLAlchemyBaseUserTable[int], BaseDbModel):
-	__tablename__ = "user"
+    __tablename__ = "user"
 
-	id: Mapped[IntPk]
-	first_name: Mapped[String100]
-	last_name: Mapped[String100]
-	telegram_id: Mapped[int | None] = mapped_column(unique=True)
+    id: Mapped[IntPk]
+    first_name: Mapped[String100]
+    last_name: Mapped[String100]
+    telegram_id: Mapped[int | None] = mapped_column(unique=True)

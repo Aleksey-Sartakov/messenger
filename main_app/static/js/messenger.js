@@ -52,12 +52,12 @@ async function loadMessages(userId, userName, limit, offset) {
         let response = await fetch(`/messenger/messages/${userId}?limit=${limit}&offset=${offset}`);
         let messages = await response.json();
 
-		if (messages) {
-			countUploadedMessages += messages.length;
-        	return messages;
-		}
+        if (messages) {
+            countUploadedMessages += messages.length;
+            return messages;
+        }
 
-		return null;
+        return null;
 
     } catch (error) {
         console.error('Ошибка загрузки сообщений:', error);
@@ -114,35 +114,35 @@ function connectSessionWebSocket() {
 
 
 async function handleScroll() {
-	if (chatMessages.scrollTop === 0 && !isLoadingMessages && hasMoreMessages) {
-		isLoadingMessages = true;
-		const oldScrollHeight = chatMessages.scrollHeight;
+    if (chatMessages.scrollTop === 0 && !isLoadingMessages && hasMoreMessages) {
+        isLoadingMessages = true;
+        const oldScrollHeight = chatMessages.scrollHeight;
 
-		let messages = await loadMessages(selectedUserId, selectedUserName, messagesLimit, countUploadedMessages);
+        let messages = await loadMessages(selectedUserId, selectedUserName, messagesLimit, countUploadedMessages);
 
-		if (messages) {
-			const fragment = document.createDocumentFragment();
-			for (let message of messages) {
-				fragment.appendChild(createMessageElement(message, selectedUserName))
-			};
+        if (messages) {
+            const fragment = document.createDocumentFragment();
+            for (let message of messages) {
+                fragment.appendChild(createMessageElement(message, selectedUserName))
+            };
 
-			chatMessages.insertBefore(fragment, chatMessages.firstChild);
-			chatMessages.scrollTop = chatMessages.scrollHeight - oldScrollHeight;
-		} else {
-			hasMoreMessages = false;
-			removeScrollHandler();
-		}
+            chatMessages.insertBefore(fragment, chatMessages.firstChild);
+            chatMessages.scrollTop = chatMessages.scrollHeight - oldScrollHeight;
+        } else {
+            hasMoreMessages = false;
+            removeScrollHandler();
+        }
 
-		isLoadingMessages = false;
-	}
+        isLoadingMessages = false;
+    }
 }
 
 function attachScrollHandler() {
-	chatMessages.addEventListener('scroll', handleScroll);
+    chatMessages.addEventListener('scroll', handleScroll);
 }
 
 function removeScrollHandler() {
-	chatMessages.removeEventListener('scroll', handleScroll);
+    chatMessages.removeEventListener('scroll', handleScroll);
 }
 
 
@@ -163,29 +163,29 @@ async function selectUser(userId, userName) {
     let messages = await loadMessages(selectedUserId, selectedUserName, messagesLimit, countUploadedMessages);
 
     for (let message of messages) {
-		chatMessages.appendChild(createMessageElement(message, selectedUserName));
-	}
-	chatMessages.scrollTop = chatMessages.scrollHeight;
+        chatMessages.appendChild(createMessageElement(message, selectedUserName));
+    }
+    chatMessages.scrollTop = chatMessages.scrollHeight;
 
-	attachScrollHandler();
+    attachScrollHandler();
 
     connectWebSocketWithSelectedUser();
 }
 
 
 function addUsersToList(users) {
-	users.forEach(user => {
-		if (user.id != currentUserId) {
-			const userItem = document.createElement('div');
-			let userName = user.first_name + " " + user.last_name;
+    users.forEach(user => {
+        if (user.id != currentUserId) {
+            const userItem = document.createElement('div');
+            let userName = user.first_name + " " + user.last_name;
 
-			userItem.className = 'user-item';
-			userItem.textContent = userName;
-			userItem.dataset.userId = user.id;
-			userItem.addEventListener('click', () => selectUser(user.id, userName));
-			userList.insertBefore(userItem, loadMore);
-		}
-	});
+            userItem.className = 'user-item';
+            userItem.textContent = userName;
+            userItem.dataset.userId = user.id;
+            userItem.addEventListener('click', () => selectUser(user.id, userName));
+            userList.insertBefore(userItem, loadMore);
+        }
+    });
 }
 
 

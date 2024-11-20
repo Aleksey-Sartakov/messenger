@@ -1,7 +1,7 @@
 """first_creation_of_tables
 
 Revision ID: 2fab8985131c
-Revises: 
+Revises:
 Create Date: 2024-10-21 21:42:05.020047
 
 """
