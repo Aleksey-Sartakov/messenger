@@ -40,6 +40,8 @@ services:
       - "5435:5432"
     env_file:
       - .env-non-dev
+    volumes:
+      - db_for_messanger_data:/var/lib/postgresql/data
     healthcheck:
       test: [ "CMD-SHELL", "pg_isready -U ${DB_USER_NAME} -d ${DB_NAME} -p 5435" ]
       interval: 10s
@@ -76,3 +78,6 @@ services:
     depends_on:
       - messenger
       - telegram_bot
+
+volumes:
+  db_for_messanger_data:
