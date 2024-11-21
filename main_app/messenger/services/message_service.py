@@ -14,6 +14,10 @@ from main_app.service import BaseDAO
 
 
 class MessageService(BaseDAO[Message, MessageCreate, MessageUpdate], model=Message):
+    """
+    The class stores the business logic of message interaction.
+    """
+
     @classmethod
     async def get_between_two_users(
             cls,
@@ -22,6 +26,19 @@ class MessageService(BaseDAO[Message, MessageCreate, MessageUpdate], model=Messa
             second_user_id: int,
             pagination: DefaultPagination | None = None
     ) -> list[Message] | None:
+        """
+        Get the message history of a conversation between two people.
+
+        :param session: Active session with the database.
+        :param first_user_id: id of one of the participants in the dialogue.
+        :param second_user_id: id of the second participant in the dialogue.
+        :param pagination: It has two parameters:
+            - limit: The number of messages you need to get.
+            - offset: The number of messages to skip from the beginning.
+        :return: List of instances of the "Message" class or None if there
+        has not yet been a dialogue.
+        """
+
         subquery = (
             select(Message)
             .where(
@@ -50,6 +67,19 @@ class MessageService(BaseDAO[Message, MessageCreate, MessageUpdate], model=Messa
             sender_cache_key: str,
             recipient_cache_key: str
     ) -> None:
+        """
+        Save the message to cache.
+
+        If there are already messages from a dialog with the specified recipient
+        in the cache for the current user, it will be updated with a new message.
+        If the recipient also has messages from the same dialog in their cache,
+        their cache will be updated too.
+
+        :param message: The new message
+        :param sender_cache_key: The key used to store the current user's cache for the dialog
+        :param recipient_cache_key:The key used to store the recipient's cache for the dialog
+        """
+
         json_valid_message = jsonable_encoder(message)
 
         sender_cached_messages = await redis_client.get(sender_cache_key)
@@ -74,12 +104,28 @@ class MessageService(BaseDAO[Message, MessageCreate, MessageUpdate], model=Messa
 
     @classmethod
     async def set_cache(cls, key: str, messages: list[MessageRead]) -> None:
+        """
+        Add a group of messages to the cache using the specified key.
+
+        :param key: Cache key.
+        :param messages: List of messages.
+        """
+
         json_valid_messages = jsonable_encoder(messages)
 
         await redis_client.set(key, json.dumps(json_valid_messages), ex=MESSAGES_CACHE_TTL)
 
     @classmethod
     async def get_cache(cls, key: str, pagination: DefaultPagination | None = None) -> list[MessageRead] | None:
+        """
+        Get messages from the cache using the specified key.
+
+        :param key: Cache key.
+        :param pagination: It has two parameters:
+            - limit: The number of messages you need to get.
+            - offset: The number of messages to skip from the beginning.
+        """
+
         cached_messages = await redis_client.get(key)
         try:
             cached_messages = json.loads(cached_messages)
@@ -107,6 +153,17 @@ class MessageService(BaseDAO[Message, MessageCreate, MessageUpdate], model=Messa
 
     @classmethod
     async def update_cache(cls, key: str, messages: list[MessageRead]) -> None:
+        """
+        Add a new group of messages to the cache using the specified key.
+
+        If the cache for a given key already exists, the program adds a
+        group of messages to the beginning of it. Otherwise, it simply
+        saves messages for that key.
+
+        :param key: Cache key.
+        :param messages: List of messages.
+        """
+
         json_valid_messages = jsonable_encoder(messages)
 
         cached_messages = await redis_client.get(key)
@@ -118,6 +175,13 @@ class MessageService(BaseDAO[Message, MessageCreate, MessageUpdate], model=Messa
 
     @classmethod
     async def cache_exists(cls, key: str) -> bool:
+        """
+        Check if the specified key exists in the cache.
+
+        :param key: Cache key.
+        :return: True or False
+        """
+
         cached_messages = await redis_client.get(key)
         if cached_messages:
             return True

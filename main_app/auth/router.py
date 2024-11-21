@@ -1,7 +1,7 @@
 import traceback
 
 from aioredis.exceptions import ConnectionError as RedisConnectionError
-from fastapi import Depends, HTTPException, Request
+from fastapi import Depends, HTTPException, Request, status
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.exc import SQLAlchemyError, IntegrityError
@@ -38,13 +38,35 @@ async def get_auth_page(request: Request, current_user: User | None = Depends(cu
 users_router = auth_service.get_users_router(UserRead, UserUpdate)
 
 
-@users_router.get("/", response_model=list[UserRead])
+@users_router.get(
+    "/",
+    response_model=list[UserRead],
+    responses={
+        status.HTTP_400_BAD_REQUEST: {
+            "description": "The requested sort field does not exist."
+        },
+        status.HTTP_500_INTERNAL_SERVER_ERROR: {
+            "description": "An error when requesting the database, or another unexpected server error."
+        },
+    }
+)
 async def get_users_list(
         pagination: DefaultPagination = Depends(),
         sorting: SimpleSorting = Depends(),
         session: AsyncSession = Depends(get_async_session),
         current_user: User = Depends(current_active_user)
 ):
+    """
+    Get a list of users.
+
+    By default, the result from the cache is returned if it exists.
+    If there is no cached result, a query is executed against the database,
+    the result is saved to the cache, and it is then returned.
+
+    The cached result is stored separately for each query (query parameters
+    are used to generate a unique key for the cached entry).
+    """
+
     logger.info(f"'get_users_list' has called by user with id {current_user.id}")
 
     try:
@@ -93,8 +115,32 @@ async def get_users_list(
     return users
 
 
-@users_router.post("/link_telegram_id/")
-async def link_telegram_id(email: str, telegram_id: int, session: AsyncSession = Depends(get_async_session)):
+@users_router.post(
+    "/link_telegram_id/",
+    responses={
+        status.HTTP_400_BAD_REQUEST: {
+            "description": "Telegram account with the requested id is already linked to another user."
+        },
+        status.HTTP_404_NOT_FOUND: {
+            "description": "The user with the requested email was not found."
+        },
+        status.HTTP_500_INTERNAL_SERVER_ERROR: {
+            "description": "An error when requesting the database, or another unexpected server error."
+        },
+    }
+)
+async def link_telegram_id(
+        email: str,
+        telegram_id: int,
+        session: AsyncSession = Depends(get_async_session)
+) -> dict[str, str]:
+    """
+    Link a telegram account to an application account.
+
+    After linking, an alert will be sent in the telegram
+    about each message received offline.
+    """
+
     user = await UserService.get_one_or_none(session, {"email": email})
     if user:
         try:

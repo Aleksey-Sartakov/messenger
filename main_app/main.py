@@ -7,11 +7,12 @@ from fastapi.responses import RedirectResponse
 from main_app.auth.router import auth_router, users_router
 from main_app.messenger.router import messanger_router
 
+
 tags_metadata = [
     {
         "name": "Auth",
         "description": """
-            Basic authorization methods: registration, login, logout. The JWT key in cookies is used.
+            Basic authorization methods: registration, login, logout. The JWT key + cookies is used.
         """,
     },
     {
@@ -23,8 +24,8 @@ tags_metadata = [
     {
         "name": "Users",
         "description": """
-            Methods for working with users. Available only to authenticated users.
-            For users who are not an admin (superuser), only the "/users/me" methods are available.
+            Methods for working with users. Available only to authenticated users (except link_telegram_id).
+            For users who are not an admin (not superuser), only the "/users/me" is available.
         """,
     },
 ]

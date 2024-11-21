@@ -15,6 +15,10 @@ from main_app.service import BaseDAO
 
 
 class UserService(BaseDAO[User, UserCreate, UserUpdate], model=User):
+    """
+    The class stores the business logic of user interaction.
+    """
+
     @classmethod
     async def get(
             cls,
@@ -22,6 +26,20 @@ class UserService(BaseDAO[User, UserCreate, UserUpdate], model=User):
             sorting: SimpleSorting | None = None,
             pagination: DefaultPagination | None = None
     ) -> list[User]:
+        """
+        Get a list of users.
+
+        :param session: Active session with the database.
+        :param sorting: It has two parameters:
+            - sort_by: the name of the attribute to sort by. If not specified,
+            it will sort by "id".
+            - order: can take the values "asc" or "desc".
+        :param pagination: It has two parameters:
+            - limit: The number of users you need to get.
+            - offset: The number of users to skip from the beginning.
+        :return: List of instances of the "User" class.
+        """
+
         if not hasattr(User, sorting.sort_by):
             raise ColumnDoesNotExistError(sorting.sort_by)
 
@@ -44,7 +62,17 @@ class UserService(BaseDAO[User, UserCreate, UserUpdate], model=User):
             cls,
             session: AsyncSession,
             filters: dict[str, str | int | float | bool | datetime]
-    ) -> User:
+    ) -> User | None:
+        """
+        Get one user according to the specified parameters.
+
+        :param session: Active session with the database.
+        :param filters: A dictionary in which the key is the name of a property
+        from the "User" class and the value is the desired value for that property.
+        :return: "User" instance or None, if the user with the specified parameters
+        does not exist
+        """
+
         query = select(User).filter_by(**filters)
         users = await session.scalars(query)
 
@@ -52,6 +80,21 @@ class UserService(BaseDAO[User, UserCreate, UserUpdate], model=User):
 
     @classmethod
     async def get_from_cache(cls, sorting: SimpleSorting, pagination: DefaultPagination) -> list[User] | None:
+        """
+        Returns a list of users from the cache.
+
+        The key for the cache is generated based on the passed parameters.
+
+        :param sorting: It has two parameters:
+            - sort_by: the name of the attribute by which the list should be sorted.
+            - order: can take the values "asc" or "desc".
+        :param pagination: It has two parameters:
+            - limit: The number of users you need to get.
+            - offset: The number of users to skip from the beginning.
+        :return: List of instances of the "User" class or None if there is no cache
+        for the specified parameters.
+        """
+
         cache_key = USERS_CACHE_KEY_TEMPLATE.format(sorting.sort_by, sorting.order, pagination.limit, pagination.offset)
         cached_users = await redis_client.get(cache_key)
 
@@ -64,6 +107,20 @@ class UserService(BaseDAO[User, UserCreate, UserUpdate], model=User):
 
     @classmethod
     async def save_to_cache(cls, users: list[User], sorting: SimpleSorting, pagination: DefaultPagination) -> None:
+        """
+        Save the list of users to the cache.
+
+        The key for saving is generated based on the passed parameters.
+
+        :param users: List of instances of the "User" class
+        :param sorting: It has two parameters:
+            - sort_by: the name of the attribute by which the list should be sorted.
+            - order: can take the values "asc" or "desc".
+        :param pagination: It has two parameters:
+            - limit: The number of users you need to get.
+            - offset: The number of users to skip from the beginning.
+        """
+
         validated_users = [UserRead.model_validate(user).model_dump() for user in users]
         cache_key = USERS_CACHE_KEY_TEMPLATE.format(sorting.sort_by, sorting.order, pagination.limit, pagination.offset)
 

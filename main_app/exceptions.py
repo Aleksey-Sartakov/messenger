@@ -1,9 +1,6 @@
 class CompositePrimaryKeyError(Exception):
-    def __init__(self, msg: str | None = None):
-        if msg:
-            self.msg = msg
-        else:
-            self.msg = "Composite primary keys are not supported"
+    def __init__(self, msg: str = "Composite primary keys are not supported"):
+        self.msg = msg
 
     def __str__(self) -> str:
         return self.msg

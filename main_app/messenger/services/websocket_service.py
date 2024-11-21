@@ -17,6 +17,10 @@ from main_app.messenger.tasks import send_notification
 
 
 class WebsocketService:
+    """
+    The service for managing a websocket connection.
+    """
+
     def __init__(self, websocket: WebSocket):
         self.websocket = websocket
 
@@ -30,6 +34,26 @@ class WebsocketService:
             channel_name: str,
             session_marker: bool = False
     ) -> None:
+        """
+        Process incoming messages if the connection is not intended
+        to track the user's session.
+
+        1. Save the received message to the database.
+        2. If the message is saved successfully, add it to the cache.
+        3. Post the message in pub/sub
+        4. Send a notification to telegram if the user is offline.
+
+        If an error occurs when saving a message in the database or when trying
+        to send it via the Redis channel, it cancels saving the record in the
+        database and sends the error status message back to the sender via WebSocket.
+
+        :param session: Active session with the database.
+        :param sender_id: The ID of the user who sent the message.
+        :param channel_name: The name of the pub/sub channel for this chat.
+        :param session_marker: A flag that indicates whether this WebSocket connection
+        is intended to monitor an active user's session (online/offline status).
+        """
+
         async for new_message in self.websocket.iter_json():
             if not session_marker:
                 try:
@@ -83,4 +107,12 @@ class WebsocketService:
 
     @PubSubService.listen
     async def handle_messages_from_pubsub(self, message: str):
+        """
+        The websocket starts listening to the pub/sub channel
+        of the dialog that it is linked to and sends all messages
+        received on that channel to the client.
+
+        :param message: The message received from the pub/sub channel.
+        """
+
         await self.websocket.send_text(message)

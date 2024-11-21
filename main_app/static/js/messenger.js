@@ -18,6 +18,7 @@ let isLoadingMessages = false;
 let hasMoreMessages = true;
 
 
+// create a new block with a message
 function createMessageElement(message, userName) {
     let messageContainer = document.createElement('div');
     let messageType;
@@ -47,6 +48,7 @@ function createMessageElement(message, userName) {
     return messageContainer;
 }
 
+// download the message history
 async function loadMessages(userId, userName, limit, offset) {
     try {
         let response = await fetch(`/messenger/messages/${userId}?limit=${limit}&offset=${offset}`);
@@ -66,6 +68,7 @@ async function loadMessages(userId, userName, limit, offset) {
     }
 }
 
+// send a new message to the websocket
 function sendMessage() {
     let message = messageInput.value.trim();
     if (message && selectedUserId) {
@@ -80,7 +83,7 @@ function sendMessage() {
     }
 }
 
-
+// create a websocket connection for the selected chat and launch the message listener
 function connectWebSocketWithSelectedUser() {
     if (websocketConnectionWithSelectedUser) websocketConnectionWithSelectedUser.close();
 
@@ -99,6 +102,7 @@ function connectWebSocketWithSelectedUser() {
     websocketConnectionWithSelectedUser.onclose = () => console.log('WebSocket соединение с пользователем закрыто');
 }
 
+// create a websocket to track a user session (online/offline status detection)
 function connectSessionWebSocket() {
     let sessionWebsocketId = 0;
     let sessionWebsocket = new WebSocket(`ws://${window.location.host}/messenger/ws?session_marker=True&recipient_id=${sessionWebsocketId}&current_user_id=${currentUserId}`);
@@ -112,7 +116,7 @@ function connectSessionWebSocket() {
     sessionWebsocket.onclose = () => console.log('WebSocket соединение для отслеживания состояния сессии закрыто');
 }
 
-
+// download additional messages from the history when scrolling the chat to the upper limit
 async function handleScroll() {
     if (chatMessages.scrollTop === 0 && !isLoadingMessages && hasMoreMessages) {
         isLoadingMessages = true;
@@ -145,7 +149,7 @@ function removeScrollHandler() {
     chatMessages.removeEventListener('scroll', handleScroll);
 }
 
-
+// handler for selecting a user from a list
 async function selectUser(userId, userName) {
     removeScrollHandler();
 
@@ -172,7 +176,7 @@ async function selectUser(userId, userName) {
     connectWebSocketWithSelectedUser();
 }
 
-
+// add a new user group to the user list
 function addUsersToList(users) {
     users.forEach(user => {
         if (user.id != currentUserId) {
@@ -188,7 +192,7 @@ function addUsersToList(users) {
     });
 }
 
-
+// activating the handler for clicking on a user in the list
 userItems.forEach(item => {
     item.addEventListener('click', async () => {
         let userName = item.textContent.trim();
@@ -217,7 +221,7 @@ logoutBtn.addEventListener('click', async () => {
     }
 });
 
-
+// upload another user group and add it to the list
 loadMore.addEventListener('click', async () => {
     let response = await fetch(`/users?offset=${loaded_users_count}`);
     let newUsers = await response.json();

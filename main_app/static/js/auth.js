@@ -1,3 +1,4 @@
+// switch between the registration and authorization tabs
 function showTab(tabName) {
     document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
     document.querySelectorAll('.form').forEach(form => form.classList.remove('active'));
@@ -29,6 +30,7 @@ function validateForm(formId) {
     return isValid;
 }
 
+// authorization in the application
 document.getElementById('loginForm').addEventListener('submit', async (e) => {
     e.preventDefault();
     if (validateForm('loginForm')) {
@@ -57,6 +59,7 @@ document.getElementById('loginForm').addEventListener('submit', async (e) => {
     }
 });
 
+// registering a new user
 document.getElementById('registerForm').addEventListener('submit', async (e) => {
     e.preventDefault();
     if (validateForm('registerForm')) {
@@ -91,7 +94,7 @@ document.getElementById('registerForm').addEventListener('submit', async (e) => 
     }
 });
 
-// Добавляем слушатели событий для проверки полей в реальном времени
+// initializing form validation
 ['loginForm', 'registerForm'].forEach(formId => {
     const form = document.getElementById(formId);
     form.querySelectorAll('input').forEach(input => {
@@ -99,6 +102,5 @@ document.getElementById('registerForm').addEventListener('submit', async (e) => 
     });
 });
 
-// Инициализация валидации форм
 validateForm('loginForm');
 validateForm('registerForm');

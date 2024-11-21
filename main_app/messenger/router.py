@@ -1,7 +1,7 @@
 import asyncio
 import traceback
 
-from fastapi import APIRouter, Depends, Request, HTTPException
+from fastapi import APIRouter, Depends, Request, HTTPException, status
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
@@ -49,13 +49,39 @@ async def get_messenger_page(
     )
 
 
-@messanger_router.get("/messages/{second_user_id}", response_model=list[MessageRead])
+@messanger_router.get(
+    "/messages/{second_user_id}",
+    response_model=list[MessageRead],
+    responses={
+        status.HTTP_404_NOT_FOUND: {
+            "description": "The user with the requested id was not found."
+        },
+        status.HTTP_500_INTERNAL_SERVER_ERROR: {
+            "description": "An error when requesting the database, or another unexpected server error."
+        },
+    }
+)
 async def get_messages_between_users_by_second_user_id(
         second_user_id: int,
         pagination: DefaultPagination = Depends(),
         session: AsyncSession = Depends(get_async_session),
         current_user: User = Depends(current_active_user)
 ):
+    """
+    Get the message history between the current and requested users.
+
+    The cache is first checked. If all the required messages are found
+    in the cache, they are returned. If the required messages are not
+    present in the cache, they are retrieved from the database and
+    stored in the cache before being returned to the client.
+
+    If only a portion of the requested messages are present in the cache,
+    then the missing messages will be retrieved from the database as well.
+    These missing messages are then added to the cache, and then combined
+    with the messages that were already there. Finally, all the messages
+    are returned to the client in their entirety.
+    """
+
     cache_key = MESSAGES_CACHE_KEY_TEMPLATE.format(sender_id=current_user.id, recipient_id=second_user_id)
     try:
         cached_messages = await MessageService.get_cache(
@@ -114,7 +140,7 @@ async def get_messages_between_users_by_second_user_id(
         logger.error(f"User with ID {current_user.id} or {second_user_id} does not exist."
                      f"More details:\n{traceback_message}")
 
-        raise HTTPException(status_code=400, detail={
+        raise HTTPException(status_code=404, detail={
             "status": "error",
             "details": "One or both users with requested IDs do not exists."
         })
@@ -141,6 +167,34 @@ async def websocket_endpoint(
         session_marker: bool = False,
         session: AsyncSession = Depends(get_async_session)
 ):
+    """
+    Creates a web socket connection between the client and the server.
+
+    A received connection can be processed in two different scenarios,
+    depending on the value of the 'session_marker' parameter.
+
+    ## Scenario 1, when 'session_marker=True' ##:
+        in this scenario, the connection is intended to track an active
+        user session. Every time a tab is opened / closed in the
+        browser, the counter of active sessions of this user in redis
+        increases / decreases. The counter value '> 0' indicates that
+        the user is online, otherwise it is considered offline.
+        This counter is used when sending notifications to telegram.
+
+    ## Scenario 2, when 'session_marker=False' ##:
+        in this scenario, the connection is designed for real-time
+        communication between users. When a connection is established,
+        it subscribes to a Redis channel. Whenever a new message is
+        received through the WebSocket, it is sent to this channel,
+        and all subscribers to the channel receive it. The message
+        is then sent via the WebSocket to the client, ensuring that
+        the new message appears on all open browser tabs in real time.
+
+        This architecture allows to run multiple instances of the
+        application that can simultaneously handle incoming websocket
+        connections.
+    """
+
     websocket_service = WebsocketService(websocket)
     await websocket_service.connect()
 

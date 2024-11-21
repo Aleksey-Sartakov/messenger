@@ -15,11 +15,25 @@ from main_app.database import redis_client
 
 
 class UserManager(IntegerIDMixin, BaseUserManager[User, int]):
+    """
+    Class needed for "FastAPI Users" library.
+
+    Designed to implement event handlers that occur when working with the authorization module.
+    """
+
     reset_password_token_secret = settings.SECRET_KEY_FOR_RESET_PASSWORD
     verification_token_secret = settings.SECRET_KEY_FOR_JWT
 
-    # удаление списка пользователей из кеша при регистрации нового пользователя
-    async def on_after_register(self, user: User, request: Request | None = None):
+    async def on_after_register(self, user: User, request: Request | None = None) -> None:
+        """
+        This function is triggered after successful registration of a new user.
+
+        Checks for the presence of a list of users in the cache and removes it if found.
+
+        :param user: The registered user
+        :param request: Optional FastAPI request that triggered the operation, defaults to None.
+        """
+
         try:
             keys_to_delete = await redis_client.keys(f"{USERS_CACHE_KEY_PREFIX}:*")
             if keys_to_delete:

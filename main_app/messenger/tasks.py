@@ -9,7 +9,23 @@ from main_app.database import async_sessionmaker_instance, async_engine
 
 @celery_manager.task
 def send_notification(recipient_id: int, sender_id: int) -> None:
+    """
+    Celery's task is to send a notification to telegram.
+
+    An asynchronous database connection created in the main
+    application is used, as well as an asynchronous client
+    to send a message to the notification microservice.
+
+    :param recipient_id: The ID of the user who should be notified about a new message.
+    :param sender_id: The ID of the user who sent the message.
+    """
+
     async def notify():
+        """
+        Send a notification if the recipient has linked Telegram ID
+        to his application account.
+        """
+
         await async_engine.dispose(close=False)
 
         async with async_sessionmaker_instance() as session:
